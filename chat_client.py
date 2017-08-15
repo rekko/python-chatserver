@@ -1,21 +1,25 @@
 import socket
-import sys
-import select
+import gevent
+import gevent.threadpool
 
 print('port? ')
 port = int(input())
+
 s = socket.socket()
 s.connect(('localhost', port))
 f = s.makefile('rw')
-while True:
-    socket_list = [sys.stdin, s]
 
-    read_sockets, write_sockets, error_sockets = select.select(socket_list,
-                                                               [],
-                                                               [])
+def read_message():
+    while True:
+        print(f.readline())
 
-    for sock in read_sockets:
-        if sock == s:
-            print(f.readline())
-        else:
-            print(input(), file=f, flush=True)
+def write_message():
+    while True:
+        print(input(), file=f, flush=True)
+
+pool = gevent.threadpool.ThreadPool(5)
+
+pool.spawn(read_message)
+pool.spawn(write_message)
+
+gevent.wait()
